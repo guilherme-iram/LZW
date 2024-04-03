@@ -3,8 +3,8 @@ import sys
 from sys import argv
 from struct import *
 
-file_path = "xml"
-file_out = "xml"
+file_path = "data/silesia_concat/concat_file"
+file_out = "data/silesia_concat/concat_file"
 
 with open(file_path, "rb") as file:
     
@@ -26,7 +26,7 @@ with open(file_path, "rb") as file:
         symbol = chr(symbol)
         
         if (i % 100000 == 0):
-            print(f"Progress: {i / length * 100:.2f}%")
+            print(f"Progress encoding: {i / length * 100:.2f}%")
 
         string_plus_symbol = string + symbol # get input symbol.
         if string_plus_symbol in dictionary: 
@@ -39,24 +39,32 @@ with open(file_path, "rb") as file:
             string = symbol
         
 
-    if string in dictionary:
-        compressed_data.append(dictionary[string])
 
     output_file = open(file_out + ".lzw", "wb")
+    
+    all_bytes = []
 
-
-    for data in compressed_data:
-
-        total_bytes = data.bit_length() // 8 + 1
+    print("Making bytes: ")
+    for i, data in enumerate(compressed_data):
+        if (i % 100000 == 0):
+            print(f"Progress bytes: {i / len(compressed_data) * 100:.2f}%")
         
-        if total_bytes <= 1:
-            output_file.write(pack('>B', data))
-        elif total_bytes <= 2:
-            output_file.write(pack('>H',  data))
-        elif total_bytes <= 4:
-            output_file.write(pack('>I', data))
-        elif total_bytes <= 8:
-            output_file.write(pack('>Q', data))
+        p = data.bit_length()
+        all_bytes.append(format(data, f'0{p}b'))
+
+    
+    current_bytes = ""
+
+    print("Writing binary: ")
+    for i, byte in enumerate(all_bytes):
+
+        if (i % 100000 == 0):
+            print(f"Progress write binary: {i / len(compressed_data) * 100:.2f}%")
+
+        current_bytes += byte
+        while len(current_bytes) >= 8:
+            output_file.write(pack('B', int(current_bytes[:8], 2)))
+            current_bytes = current_bytes[8:]
 
         
     output_file.close()
