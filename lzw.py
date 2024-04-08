@@ -46,7 +46,6 @@ with open(file_path, "rb") as file:
             string = symbol
             
         
-        
     print(compressed_data)
     print(dictionary)
 
@@ -59,7 +58,10 @@ with open(file_path, "rb") as file:
         if (i % 100000 == 0):
             print(f"Progress bytes: {i / len(compressed_data) * 100:.2f}%")
         
-        p = data.bit_length() + 1
+        p = data.bit_length()
+        if p < 8:
+            p = 8
+        print(data, ": ", p, " - bin: ", format(data, f'0{p}b'))
         all_bytes.append(format(data, f'0{p}b'))
     
     current_bytes = ""
@@ -79,8 +81,8 @@ with open(file_path, "rb") as file:
             output_file.write(pack('B', to_write))
             current_bytes = current_bytes[8:]
             if i == len(all_bytes) - 1:
-                diff = 8 - len(current_bytes) 
-                to_write_eof = ('0' * diff) + current_bytes
+                diff = 8 - len(current_bytes)
+                to_write_eof =  ('0' * diff) + current_bytes
                 output_file.write(pack('B', int(to_write_eof, 2)))
                 
             
