@@ -3,7 +3,7 @@ import sys
 from sys import argv
 from struct import *
 
-file_path = "xml"
+file_path = "texto"
 
 with open(file_path, "rb") as file:
     
@@ -70,7 +70,7 @@ with open(file_path, "rb") as file:
 
             if i == len(all_bytes) - 1:
                 diff = 8 - len(current_bytes)
-                to_write_eof =  ('0' * diff) + current_bytes
+                to_write_eof =   current_bytes + ('0' * diff) 
                 output_file.write(pack('B', int(to_write_eof, 2)))
                 
             
