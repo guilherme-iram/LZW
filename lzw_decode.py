@@ -33,7 +33,8 @@ todos_os_bytes.pop(0)
 all_bytes_int = []
 
 while True:
-
+    if (dictionary_size == 264):
+        print("aqui")
     p = (dictionary_size).bit_length()
     #'0011101'
     while len(bytes_atuais) < p and len(todos_os_bytes) > 0:
