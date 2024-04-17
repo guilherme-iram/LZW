@@ -21,6 +21,7 @@ with open(file_path, "rb") as file:
 
     all_bytes = []
     all_bytes_str = []
+    all_bytes_keydict = []
 
     for i, symbol in enumerate(silesia_concat):
         
@@ -33,14 +34,13 @@ with open(file_path, "rb") as file:
         
         if string_plus_symbol in dictionary: 
             string = string_plus_symbol
-            
         else:
 
             p = (dictionary_size).bit_length()
             all_bytes.append(format(dictionary[string], f'0{p}b'))
             all_bytes_str.append(string)
 
-            if(len(dictionary) < maximum_table_size):
+            if(len(dictionary) <= maximum_table_size):
                 dictionary[string_plus_symbol] = dictionary_size
                 dictionary_size += 1
             
@@ -50,6 +50,19 @@ with open(file_path, "rb") as file:
             p = (dictionary_size).bit_length()
             all_bytes.append(format(dictionary[string], f'0{p}b'))
             all_bytes_str.append(string)
+
+
+    # convert in int
+    all_bytes_int = [int(byte, 2) for byte in all_bytes]
+    print(all_bytes_int)
+
+
+    print(all_bytes_str)
+
+    with open("dict_encoder.txs", "w") as file:
+        for key, value in dictionary.items():
+            if value > 255:
+                file.write(f"{key}:{value}\n")
 
     output_file = open(file_path + ".lzw", "wb")
     
@@ -71,7 +84,7 @@ with open(file_path, "rb") as file:
             if i == len(all_bytes) - 1:
                 diff = 8 - len(current_bytes)
                 to_write_eof =   current_bytes + ('0' * diff) 
-                output_file.write(pack('B', int(to_write_eof, 2)))
+                output_file.write(pack('<B', int(to_write_eof, 2)))
                 
             
     output_file.close()
