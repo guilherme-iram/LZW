@@ -1,26 +1,63 @@
-from typing import List
+from typing import Dict, List, Tuple
+from io import TextIOWrapper
+from struct import pack
+
+ONE_BYTE = 8
+
+class IOHandler:
+    def __init__(self, path) -> None:
+        self.read_path = f"./data_test/{path}"
+        self.write_path = f"./data_test/{path}.lzw"
+
+    def read_file_to_encode(self) -> str:
+        with open(self.read_path, "r") as f:
+            file = f.read()
+        return file
+    
+    def write_file_to_encode(self, message: List[str]) -> None:
+        output_file: TextIOWrapper = open(self.write_path, "wb")        
+        while len(message) > 8:
+            bits_to_write = message[:ONE_BYTE]
+            to_write = int(bits_to_write, 2)
+            print(bits_to_write, to_write)
+            output_file.write(pack('B', to_write))
+            message = message[ONE_BYTE:]
+
+        if len(message) > 0:
+            bits_to_write = message
+            to_write = int(bits_to_write, 2)
+            output_file.write(pack('B', to_write))
+        
+        output_file.close()
+
+def to_bin(integer: int, number_of_bits):
+    return format(integer, f'0{number_of_bits}b')
 
 class LZW:
-    def encode(self, message: str) -> List[int]: 
-        dict_size: int = 256 
-        dictionary: dict = {chr(i): i for i in range(dict_size)}
+    def encode(self, message: str) -> Tuple[str, List[int]]: 
+        dict_size: int = 255
+        dictionary: dict = {chr(i): i for i in range(dict_size + 1)}
 
         found_chars: str = ""
-        result: List[int] = []
+        result: str = ""
+        bits_of_each_symbol: List[int] = []
         for char in message:
+            dict_bits_size: int = dict_size.bit_length()
             chars_to_add: str = found_chars + char
             if chars_to_add in dictionary:
                 found_chars = chars_to_add
             else:
-                result.append(dictionary[found_chars])
-                dictionary[chars_to_add] = dict_size
+                result += to_bin(dictionary[found_chars], dict_bits_size)
+                bits_of_each_symbol.append(dict_bits_size)
                 dict_size += 1
+                dictionary[chars_to_add] = dict_size
                 found_chars = char
             
         if len(found_chars) > 0:
-            result.append(dictionary[found_chars])
-
-        return result
+            result += to_bin(dictionary[found_chars], dict_bits_size)
+            bits_of_each_symbol.append(dict_bits_size)
+            
+        return result, bits_of_each_symbol
     
     def decode(self, encoded_message: List[int]) -> str:
         dict_size: int = 256 
@@ -42,13 +79,10 @@ class LZW:
 
 
 l = LZW()
-
-m =  """1 That which was from the beginning, which we have heard, which we have seen with our eyes, which we have looked at and our hands have touchedthis we proclaim concerning the Word of life. 2 The life appeared; we have seen it and testify to it, and we proclaim to you the eternal life, which was with the Father and has appeared to us. 3 We proclaim to you what we have seen and heard, so that you also may have fellowship with us. And our fellowship is with the Father and with his Son, Jesus Christ. 4 We write this to make our[a] joy complete.
-Light and Darkness, Sin and Forgiveness
-5 This is the message we have heard from him and declare to you: God is light; in him there is no darkness at all. 6 If we claim to have fellowship with him and yet walk in the darkness, we lie and do not live out the truth. 7 But if we walk in the light, as he is in the light, we have fellowship with one another, and the blood of Jesus, his Son, purifies us from all[b] sin.
-8 If we claim to be without sin, we deceive ourselves and the truth is not in us. 9 If we confess our sins, he is faithful and just and will forgive us our sins and purify us from all unrighteousness. 10 If we claim we have not sinned, we make him out to be a liar and his word is not in us."""
-
-r = l.encode(m)
-print(r)
-r_d = l.decode(r)
-print(r_d)
+io = IOHandler("john_1")
+m = io.read_file_to_encode()
+r, b = l.encode(m)
+io.write_file_to_encode(r)
+# r_d = l.decode(r)
+# print(r_d)
+# print(m == r_d)
