@@ -8,10 +8,12 @@ corpus_dir = "data/silesia_corpus"
 # Path to the output file where all files will be concatenated
 output_file_path = "data/silesia_concat/concat_file"
 
+
 # Function to read a file in binary mode
 def read_file_in_binary(file_path):
     with open(file_path, "rb") as file:
         return file.read()
+
 
 # List all files in the Silesia corpus directory
 corpus_files = os.listdir(corpus_dir)
