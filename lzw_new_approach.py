@@ -42,18 +42,20 @@ class IOHandler:
             file = f.read()
         return [format(symbol, f"0{ONE_BYTE}b") for symbol in file]
     
-    def write_file_to_decode(self, decoded_message: List[str]):
+    def write_file_to_decode(self, decoded_message: str) -> None:
         with open(self.write_decoded_path, "wb") as f:
-            for bits in decoded_message:
-                if ord(bits) != 0:
+            last_char = len(decoded_message) - 1
+            for i, bits in enumerate(decoded_message):
+                # corner case last char 
+                if i != last_char:
                     f.write(pack("B", ord(bits)))
-                print(bits, ord(bits))
+        
 
 
-def to_bin(integer: int, number_of_bits):
+def to_bin(integer: int, number_of_bits: int) -> str:
     return format(integer, f"0{number_of_bits}b")
 
-def to_int(bin_formated: str):
+def to_int(bin_formated: str) -> int:
     return int(bin_formated, 2)
 
 
@@ -111,26 +113,21 @@ class LZW:
 
 
 l = LZW()
-io = IOHandler("john_1")
+io = IOHandler("xml")
 m = io.read_file_to_encode()
 r, b = l.encode(m)
 io.write_file_to_encode(r)
 r_e = io.read_file_to_decode()
 r_d = l.decode(r_e)
-
-print(type(r_d))
-
 io.write_file_to_decode(r_d)
 
-original = ""
-has_error = False
-for i, j in zip(m, r_d):
-    original += chr(i)
-    if chr(i) != j:
-        print(chr(i), j, chr(i) == j)
-        has_error = True
-print(len(original)) 
-print(len(r_d))
-print(r_d[-1])
-if not has_error:
-    print("DEU CERTO!")
+# original = ""
+# has_error = False
+# for i, j in zip(m, r_d):
+#     original += chr(i)
+#     if chr(i) != j:
+#         print(chr(i), j, chr(i) == j)
+#         has_error = True
+
+# if not has_error:
+#     print("DEU CERTO!")
