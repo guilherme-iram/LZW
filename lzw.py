@@ -6,7 +6,7 @@ from struct import *
 file_path = "data_test/texto"
 
 with open(file_path, "rb") as file:
-    
+
     silesia_concat = file.read()
 
     # max size = 4096, 32768, 262144, 2097152
@@ -14,44 +14,41 @@ with open(file_path, "rb") as file:
 
     dictionary_size = 256
 
-    dictionary = {chr(i): i for i in range(dictionary_size)}    
-    string = ""             
+    dictionary = {chr(i): i for i in range(dictionary_size)}
+    string = ""
 
     length = len(silesia_concat)
 
     all_bytes = []
 
     for i, symbol in enumerate(silesia_concat):
-        
+
         symbol = chr(symbol)
-        
-        if (i % 100000 == 0):
+
+        if i % 100000 == 0:
             print(f"Progress encoding: {i / length * 100:.2f}%")
 
-        string_plus_symbol = string + symbol 
-        
-        if string_plus_symbol in dictionary: 
+        string_plus_symbol = string + symbol
+
+        if string_plus_symbol in dictionary:
             string = string_plus_symbol
         else:
 
             p = (dictionary_size).bit_length()
-            all_bytes.append(format(dictionary[string], f'0{p}b'))
+            all_bytes.append(format(dictionary[string], f"0{p}b"))
 
-            if(len(dictionary) <= maximum_table_size):
+            if len(dictionary) <= maximum_table_size:
                 dictionary[string_plus_symbol] = dictionary_size
                 dictionary_size += 1
-            
+
             string = symbol
-            
+
         if i == length - 1:
             p = (dictionary_size).bit_length()
-            all_bytes.append(format(dictionary[string], f'0{p}b'))
-
-
-
+            all_bytes.append(format(dictionary[string], f"0{p}b"))
 
     output_file = open(file_path + ".lzw", "wb")
-    
+
     current_bytes = ""
 
     print("Writing binary: ")
@@ -61,23 +58,22 @@ with open(file_path, "rb") as file:
         current_bytes += byte
 
         while len(current_bytes) >= 8:
-            
+
             bits_to_write = current_bytes[:8]
             to_write = int(bits_to_write, 2)
-            output_file.write(pack('B', to_write))
+            output_file.write(pack("B", to_write))
             current_bytes = current_bytes[8:]
 
             if i == len(all_bytes) - 1:
                 while len(current_bytes) >= 8:
                     bits_to_write = current_bytes[:8]
                     to_write = int(bits_to_write, 2)
-                    output_file.write(pack('B', to_write))
+                    output_file.write(pack("B", to_write))
                     current_bytes = current_bytes[8:]
                 else:
                     diff = 8 - len(current_bytes)
-                    to_write_eof =   current_bytes + ('0' * diff) 
-                    output_file.write(pack('B', int(to_write_eof, 2)))
-                
-            
+                    to_write_eof = current_bytes + ("0" * diff)
+                    output_file.write(pack("B", int(to_write_eof, 2)))
+
     output_file.close()
     file.close()
