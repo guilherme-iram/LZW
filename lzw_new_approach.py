@@ -76,7 +76,8 @@ class LZW:
     def _is_descending(self, moving_avg_list: List[float], threshold: int = 30) -> bool:
         count_descending = 0
         count_stable_or_ascending = 0
-        for i in range(len(moving_avg_list) - np.min(threshold, len(moving_avg_list)), len(moving_avg_list) - 1):
+        
+        for i in range(len(moving_avg_list) - min(threshold, len(moving_avg_list)), len(moving_avg_list) - 1):
             diff = moving_avg_list[i] > moving_avg_list[i + 1]
             if diff:
                 count_descending += 1
@@ -110,8 +111,9 @@ class LZW:
                     dictionary[chars_to_add] = dict_size
                 else:
                     if self.dict_strategy == 2:    
-                        dict_size: int = 255
-                        dictionary: dict = self._set_dict_encode(dict_size)
+                        if dict_size == self.maximum_table_size:
+                            dict_size: int = 255
+                            dictionary: dict = self._set_dict_encode(dict_size)
                     elif self.dict_strategy == 3:
                         if self._is_descending(moving_avg_list):
                             dict_size: int = 255
@@ -154,8 +156,9 @@ class LZW:
                 dict_size += 1
             else:
                 if self.dict_strategy == 2:    
-                    dict_size: int = 256
-                    dictionary: dict = self._set_dict_decode(dict_size)
+                    if dict_size == (self.maximum_table_size + 1):
+                        dict_size: int = 256
+                        dictionary: dict = self._set_dict_decode(dict_size)
                 elif self.dict_strategy == 3:
                     if self._is_descending(moving_avg_list):
                         dict_size: int = 256
@@ -171,11 +174,10 @@ class LZW:
 MAX_LEN_DICT = [4096, 32768, 262144, 2097152]
 
 strategies = {
-    1: "Sem estratégia",
-    2: "Resetar dicionário",
-    3: "Resetar dicionário se a média móvel for decrescente"
+    1: "ED",
+    2: "RD",
+    3: "RD-MD"
 }
-
 
 def get_entropy(r):
     P = pd.Series(r).value_counts(normalize=True)
@@ -197,7 +199,7 @@ def get_compress_rate(encoded_data, original_data):
 
 for dict_length in MAX_LEN_DICT:
     for i, strategy_name in strategies.items():
-        io = IOHandler("john_1", debug_mode=True, sufix=f"_{dict_length}_{strategy_name}")
+        io = IOHandler("republic", debug_mode=True, sufix=f"_{dict_length}_{strategy_name}")
         l = LZW(dict_length, i)
 
         start_encode = time.time()
