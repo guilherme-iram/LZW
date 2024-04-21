@@ -95,7 +95,7 @@ class LZW:
         
         moving_avg_list = []
         sum_bit = ONE_BYTE
-
+        total_resets = 0
         for i, char in enumerate(message):
             dict_bits_size: int = dict_size.bit_length()
             char = chr(char)
@@ -114,10 +114,19 @@ class LZW:
                         if dict_size == self.maximum_table_size:
                             dict_size: int = 255
                             dictionary: dict = self._set_dict_encode(dict_size)
+                            total_resets += 1
+
+                            dict_size += 1
+                            dictionary[chars_to_add] = dict_size
+                            
                     elif self.dict_strategy == 3:
                         if self._is_descending(moving_avg_list):
                             dict_size: int = 255
                             dictionary: dict = self._set_dict_encode(dict_size)
+                            
+                            total_resets += 1
+                            dict_size += 1
+                            dictionary[chars_to_add] = dict_size
                         
                 found_chars = char
                 
@@ -125,20 +134,36 @@ class LZW:
 
         if len(found_chars) > 0:
             result.append(to_bin(dictionary[found_chars], dict_bits_size))
-    
+        
+        print("Len dictionary encode: ", len(dictionary))
+        print("Total resets: ", total_resets)
+
         return result, moving_avg_list
 
-    def decode(self, encoded_message: List[str]) -> str:
+    def decode(self, encoded_message: List[str], moving_avg_list: list[float]) -> str:
         dict_size: int = 256
         dictionary: dict = self._set_dict_decode(dict_size)
 
         chars = chr(to_int(encoded_message.pop(0)))
         result = chars
         sum_bit = ONE_BYTE
-        moving_avg_list = []
+        # moving_avg_list = []
         i = 0
         current_decode_bytes = ""
+        total_resets = 0
         while len(encoded_message) > 0:
+
+            if dict_size == (self.maximum_table_size + 1):
+                if self.dict_strategy == 2:    
+                    dict_size: int = 256
+                    dictionary: dict = self._set_dict_decode(dict_size)
+                    total_resets += 1
+                elif self.dict_strategy == 3:
+                    if self._is_descending(moving_avg_list[:i]):
+                        dict_size: int = 256
+                        dictionary: dict = self._set_dict_decode(dict_size)
+                        total_resets += 1
+
             dict_bits_size: int = dict_size.bit_length()
             
             while len(current_decode_bytes) < dict_bits_size and len(encoded_message) > 0:
@@ -154,20 +179,13 @@ class LZW:
             if dict_size < (self.maximum_table_size + 1):
                 dictionary[dict_size] = chars + entry[0]
                 dict_size += 1
-            else:
-                if self.dict_strategy == 2:    
-                    if dict_size == (self.maximum_table_size + 1):
-                        dict_size: int = 256
-                        dictionary: dict = self._set_dict_decode(dict_size)
-                elif self.dict_strategy == 3:
-                    if self._is_descending(moving_avg_list):
-                        dict_size: int = 256
-                        dictionary: dict = self._set_dict_decode(dict_size)
-                
             
             chars = entry
             moving_avg_list.append(sum_bit / (i + 1))
             i += 1
+
+        print("Len dictionary decode: ", len(dictionary))
+        print("Total resets: ", total_resets)
 
         return result
 
@@ -197,7 +215,7 @@ table_params = {
 def get_compress_rate(encoded_data, original_data):
     return os.stat(encoded_data).st_size / os.stat(original_data).st_size
 
-for dict_length in MAX_LEN_DICT:
+for dict_length in MAX_LEN_DICT[:1]:
     for i, strategy_name in strategies.items():
         io = IOHandler("republic", debug_mode=True, sufix=f"_{dict_length}_{strategy_name}")
         l = LZW(dict_length, i)
@@ -212,12 +230,12 @@ for dict_length in MAX_LEN_DICT:
         start_decode = time.time()
         r_e = io.read_file_to_decode()
         print("Decodificando ...")
-        r_d = l.decode(r_e)
+        r_d = l.decode(r_e, moving_avg_list)
         print("Escrevendo arquivo decodificado...")
         io.write_file_to_decode(r_d)
         end_decode = time.time()
         delta_time_decode = end_decode - start_decode
-        print("FIM")
+        print("FIM\n\n")
         entropy = get_entropy(r)
         
         cr = get_compress_rate(io.write_path, io.read_path)
