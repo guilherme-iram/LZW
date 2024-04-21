@@ -215,9 +215,11 @@ table_params = {
 def get_compress_rate(encoded_data, original_data):
     return os.stat(encoded_data).st_size / os.stat(original_data).st_size
 
+INPUT_FILE = "dickens"
+
 for dict_length in MAX_LEN_DICT[:1]:
     for i, strategy_name in strategies.items():
-        io = IOHandler("republic", debug_mode=True, sufix=f"_{dict_length}_{strategy_name}")
+        io = IOHandler(INPUT_FILE, debug_mode=False, sufix=f"_{dict_length}_{strategy_name}")
         l = LZW(dict_length, i)
 
         start_encode = time.time()
@@ -248,5 +250,5 @@ for dict_length in MAX_LEN_DICT[:1]:
         table_params["decode_time"].append(delta_time_decode)
         table_params["moving_avg_list"].append(moving_avg_list)
         
-table = pd.DataFrame(table_params)
-table.to_csv("table.csv", index=False)
+        table = pd.DataFrame(table_params)
+        table.to_csv("table.csv", index=False)
