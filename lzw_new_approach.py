@@ -9,7 +9,7 @@ import os
 
 ONE_BYTE = 8
 class IOHandler:
-    def __init__(self, path, debug_mode=True, sufix="") -> None:
+    def _init_(self, path, debug_mode=True, sufix="") -> None:
         
         prefix = "data_test" if debug_mode else "data/silesia_corpus"
         
@@ -63,7 +63,7 @@ def to_int(bin_formated: str) -> int:
     return int(bin_formated, 2)
 
 class LZW:
-    def __init__(self, maximum_table_size: int, dict_strategy: int) -> None:
+    def _init_(self, maximum_table_size: int, dict_strategy: int) -> None:
         self.maximum_table_size = maximum_table_size
         self.dict_strategy = dict_strategy
 
@@ -95,7 +95,6 @@ class LZW:
         
         moving_avg_list = []
         sum_bit = ONE_BYTE
-        total_resets = 0
         for i, char in enumerate(message):
             dict_bits_size: int = dict_size.bit_length()
             char = chr(char)
@@ -114,7 +113,6 @@ class LZW:
                         if dict_size == self.maximum_table_size:
                             dict_size: int = 255
                             dictionary: dict = self._set_dict_encode(dict_size)
-                            total_resets += 1
 
                             dict_size += 1
                             dictionary[chars_to_add] = dict_size
@@ -124,7 +122,6 @@ class LZW:
                             dict_size: int = 255
                             dictionary: dict = self._set_dict_encode(dict_size)
                             
-                            total_resets += 1
                             dict_size += 1
                             dictionary[chars_to_add] = dict_size
                         
@@ -135,34 +132,32 @@ class LZW:
         if len(found_chars) > 0:
             result.append(to_bin(dictionary[found_chars], dict_bits_size))
         
-        print("Len dictionary encode: ", len(dictionary))
-        print("Total resets: ", total_resets)
-
+        # print("Len dictionary encode: ", len(dictionary))
+        # print("Total resets: ", total_resets)
+        # print("len mensagem: ", len(message))
         return result, moving_avg_list
 
     def decode(self, encoded_message: List[str], moving_avg_list: list[float]) -> str:
         dict_size: int = 256
         dictionary: dict = self._set_dict_decode(dict_size)
-
+        # print("encoded len: ", len(encoded_message))
         chars = chr(to_int(encoded_message.pop(0)))
         result = chars
         sum_bit = ONE_BYTE
         # moving_avg_list = []
-        i = 0
+        i = 1
         current_decode_bytes = ""
-        total_resets = 0
         while len(encoded_message) > 0:
 
             if dict_size == (self.maximum_table_size + 1):
                 if self.dict_strategy == 2:    
                     dict_size: int = 256
                     dictionary: dict = self._set_dict_decode(dict_size)
-                    total_resets += 1
-                elif self.dict_strategy == 3:
-                    if self._is_descending(moving_avg_list[:i]):
+                if self.dict_strategy == 3:
+                    if self._is_descending(moving_avg_list):
                         dict_size: int = 256
                         dictionary: dict = self._set_dict_decode(dict_size)
-                        total_resets += 1
+
 
             dict_bits_size: int = dict_size.bit_length()
             
@@ -174,26 +169,26 @@ class LZW:
 
             entry: str = dictionary[code] if code in dictionary else chars + chars[0]
             result += entry
-            sum_bit += dict_bits_size
+            # sum_bit += dict_bits_size
             
             if dict_size < (self.maximum_table_size + 1):
                 dictionary[dict_size] = chars + entry[0]
                 dict_size += 1
             
             chars = entry
-            moving_avg_list.append(sum_bit / (i + 1))
+            # moving_avg_list.append(sum_bit / (i + 1))
             i += 1
 
-        print("Len dictionary decode: ", len(dictionary))
-        print("Total resets: ", total_resets)
+        # print("Len dictionary decode: ", len(dictionary))
+        # print("Total resets: ", total_resets)
 
         return result
 
 MAX_LEN_DICT = [4096, 32768, 262144, 2097152]
 
 strategies = {
-    1: "ED",
-    2: "RD",
+    # 1: "ED",
+    # 2: "RD",
     3: "RD-MD"
 }
 
@@ -215,11 +210,11 @@ table_params = {
 def get_compress_rate(encoded_data, original_data):
     return os.stat(encoded_data).st_size / os.stat(original_data).st_size
 
-INPUT_FILE = "dickens"
+INPUT_FILE = "republic"
 
 for dict_length in MAX_LEN_DICT[:1]:
     for i, strategy_name in strategies.items():
-        io = IOHandler(INPUT_FILE, debug_mode=False, sufix=f"_{dict_length}_{strategy_name}")
+        io = IOHandler(INPUT_FILE, debug_mode=True, sufix=f"{dict_length}{strategy_name}")
         l = LZW(dict_length, i)
 
         start_encode = time.time()
@@ -249,6 +244,6 @@ for dict_length in MAX_LEN_DICT[:1]:
         table_params["encode_time"].append(delta_time_encode)
         table_params["decode_time"].append(delta_time_decode)
         table_params["moving_avg_list"].append(moving_avg_list)
-        
+                
         table = pd.DataFrame(table_params)
-        table.to_csv("table.csv", index=False)
+        table.to_csv(f"table_{dict_length}{strategy_name}.csv", index=False)
