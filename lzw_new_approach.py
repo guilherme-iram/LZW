@@ -1,8 +1,8 @@
 from typing import Dict, List, Tuple
 from io import TextIOWrapper
 from struct import pack
-import numpy as np
-import pandas as pd
+# import numpy as np/
+# import pandas as pd
 # import matplotlib.pyplot as plt
 import time
 import os
@@ -76,8 +76,8 @@ class LZW:
     def _is_descending(self, moving_avg_list: List[float], threshold: int = 30) -> bool:
         last_part = moving_avg_list[-threshold: ]
 
-        half_start = np.mean(last_part[: threshold//2])
-        half_end = np.mean(last_part[: threshold//2])
+        half_start = sum(last_part[: threshold//2])
+        half_end = sum(last_part[: threshold//2])
         
         return half_end < half_start
     
@@ -187,10 +187,10 @@ strategies = {
     3: "RD-MD"
 }
 
-def get_entropy(r):
-    P = pd.Series(r).value_counts(normalize=True)
-    log2_P = P.apply(lambda p_i: np.log2(1/p_i))
-    return np.sum(P * log2_P)
+# def get_entropy(r):
+#     P = pd.Series(r).value_counts(normalize=True)
+#     log2_P = P.apply(lambda p_i: np.log2(1/p_i))
+#     return np.sum(P * log2_P)
 
 table_params = {
     "dict_length": [],
@@ -229,17 +229,17 @@ for dict_length in MAX_LEN_DICT[:1]:
         end_decode = time.time()
         delta_time_decode = end_decode - start_decode
         print("FIM\n\n")
-        entropy = get_entropy(r)
+        # entropy = get_entropy(r)
         
         cr = get_compress_rate(io.write_path, io.read_path)
         
         table_params["dict_length"].append(dict_length)
         table_params["strategy"].append(strategy_name)
-        table_params["entropy"].append(entropy)
+        # table_params["entropy"].append(entropy)
         table_params["compress_rate"].append(cr)
         table_params["encode_time"].append(delta_time_encode)
         table_params["decode_time"].append(delta_time_decode)
         table_params["moving_avg_list"].append(moving_avg_list)
                 
-        table = pd.DataFrame(table_params)
-        table.to_csv(f"table_{dict_length}{strategy_name}.csv", index=False)
+        # table = pd.DataFrame(table_params)
+        # table.to_csv(f"table_{dict_length}{strategy_name}.csv", index=False)
