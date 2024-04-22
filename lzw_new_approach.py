@@ -2,14 +2,14 @@ from typing import Dict, List, Tuple
 from io import TextIOWrapper
 from struct import pack
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd 
+import pandas as pd
+# import matplotlib.pyplot as plt
 import time
 import os
 
 ONE_BYTE = 8
 class IOHandler:
-    def _init_(self, path, debug_mode=True, sufix="") -> None:
+    def __init__(self, path, debug_mode=True, sufix="") -> None:
         
         prefix = "data_test" if debug_mode else "data/silesia_corpus"
         
@@ -63,7 +63,7 @@ def to_int(bin_formated: str) -> int:
     return int(bin_formated, 2)
 
 class LZW:
-    def _init_(self, maximum_table_size: int, dict_strategy: int) -> None:
+    def __init__(self, maximum_table_size: int, dict_strategy: int) -> None:
         self.maximum_table_size = maximum_table_size
         self.dict_strategy = dict_strategy
 
@@ -74,17 +74,12 @@ class LZW:
         return {i: chr(i) for i in range(dict_size)}
     
     def _is_descending(self, moving_avg_list: List[float], threshold: int = 30) -> bool:
-        count_descending = 0
-        count_stable_or_ascending = 0
+        last_part = moving_avg_list[-threshold: ]
+
+        half_start = np.mean(last_part[: threshold//2])
+        half_end = np.mean(last_part[: threshold//2])
         
-        for i in range(len(moving_avg_list) - min(threshold, len(moving_avg_list)), len(moving_avg_list) - 1):
-            diff = moving_avg_list[i] > moving_avg_list[i + 1]
-            if diff:
-                count_descending += 1
-            else:
-                count_stable_or_ascending += 1  
-        
-        return count_descending > count_stable_or_ascending
+        return half_end < half_start
     
     def encode(self, message: str) -> Tuple[str, List[int]]:
         dict_size: int = 255
@@ -184,7 +179,7 @@ class LZW:
 
         return result
 
-MAX_LEN_DICT = [4096, 32768, 262144, 2097152]
+MAX_LEN_DICT = [257, 4096, 32768, 262144, 2097152]
 
 strategies = {
     # 1: "ED",
@@ -210,10 +205,11 @@ table_params = {
 def get_compress_rate(encoded_data, original_data):
     return os.stat(encoded_data).st_size / os.stat(original_data).st_size
 
-INPUT_FILE = "republic"
+INPUT_FILE = "abracadabra"
 
 for dict_length in MAX_LEN_DICT[:1]:
     for i, strategy_name in strategies.items():
+        print("INICIO")
         io = IOHandler(INPUT_FILE, debug_mode=True, sufix=f"{dict_length}{strategy_name}")
         l = LZW(dict_length, i)
 
